@@ -1,3 +1,4 @@
+package model;
 public class Motor extends Kendaraan {
     private String jenisTransmisi;
 

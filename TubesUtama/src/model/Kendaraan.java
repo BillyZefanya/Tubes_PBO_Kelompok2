@@ -1,3 +1,4 @@
+package model;
 import java.time.LocalDate;
 
 public abstract class Kendaraan {
