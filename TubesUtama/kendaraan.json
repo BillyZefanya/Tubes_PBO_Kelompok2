@@ -1,0 +1,20 @@
+[
+  {
+    "jumlahPintu": 4,
+    "platNomor": "1234",
+    "hargaSewaPerHari": 100.0,
+    "tipeKendaraan": "Mobil",
+    "statusKendaraan": "TERSEDIA",
+    "totalHariDisewa": 0,
+    "tanggalServisTerakhir": "2026-06-13"
+  },
+  {
+    "jumlahPintu": 4,
+    "platNomor": "1234567890",
+    "hargaSewaPerHari": 80000.0,
+    "tipeKendaraan": "Mobil",
+    "statusKendaraan": "SEDANG_DISEWA",
+    "totalHariDisewa": 0,
+    "tanggalServisTerakhir": "2026-06-13"
+  }
+]

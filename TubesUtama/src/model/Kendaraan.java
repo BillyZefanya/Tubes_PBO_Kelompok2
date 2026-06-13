@@ -1,3 +1,5 @@
+package model;
+
 import java.time.LocalDate;
 
 public abstract class Kendaraan {
@@ -63,12 +65,27 @@ public abstract class Kendaraan {
         this.tanggalServisTerakhir = tanggalServisTerakhir;
     }
 
+    // Cek apakah kendaraan perlu masuk status DALAM_PERAWATAN
+    // Hanya ubah status jika saat ini TERSEDIA (jangan ganggu yang SEDANG_DISEWA)
     public void perbaruiStatusPerawatan() {
+        if (this.statusKendaraan != StatusKendaraan.TERSEDIA) {
+            return;
+        }
+
         LocalDate waktuSekarang = LocalDate.now();
         LocalDate batasWaktuServis = this.tanggalServisTerakhir.plusMonths(6);
 
-        if (this.totalHariDisewa >= 180 || waktuSekarang.isAfter(batasWaktuServis) || waktuSekarang.isEqual(batasWaktuServis)) {
+        if (this.totalHariDisewa >= 180
+                || waktuSekarang.isAfter(batasWaktuServis)
+                || waktuSekarang.isEqual(batasWaktuServis)) {
             this.statusKendaraan = StatusKendaraan.DALAM_PERAWATAN;
         }
+    }
+
+    // Tandai kendaraan selesai diservis: reset hari sewa, update tanggal servis, balik ke TERSEDIA
+    public void selesaiPerawatan() {
+        this.totalHariDisewa = 0;
+        this.tanggalServisTerakhir = LocalDate.now();
+        this.statusKendaraan = StatusKendaraan.TERSEDIA;
     }
 }

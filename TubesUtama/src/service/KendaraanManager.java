@@ -1,3 +1,9 @@
+package service;
+
+import model.Kendaraan;
+import model.StatusKendaraan;
+import persistence.KendaraanDeserializer;
+import persistence.LocalDateAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -51,6 +57,12 @@ public class KendaraanManager {
         }
     }
 
+    // Wrapper publik agar service lain (TransaksiService via Main) bisa memicu penyimpanan
+    // setelah mengubah status kendaraan dari luar class ini
+    public void simpanData() {
+        simpanDataKendaraan();
+    }
+
     private void perbaruiStatusMaintenanceSemuaKendaraan() {
         for (Kendaraan kendaraanItem : daftarKendaraan) {
             kendaraanItem.perbaruiStatusPerawatan();
@@ -71,7 +83,8 @@ public class KendaraanManager {
         if (validasiPlatNomorUnik(kendaraanBaru.getPlatNomor())) {
             daftarKendaraan.add(kendaraanBaru);
             simpanDataKendaraan();
-            System.out.println("[SUKSES] Kendaraan dengan plat " + kendaraanBaru.getPlatNomor() + " berhasil ditambahkan ke dalam sistem dengan status TERSEDIA.");
+            System.out.println("[SUKSES] Kendaraan dengan plat " + kendaraanBaru.getPlatNomor()
+                    + " berhasil ditambahkan ke dalam sistem dengan status TERSEDIA.");
         } else {
             System.out.println("[GAGAL] Plat Nomor sudah terdaftar!");
         }
@@ -95,9 +108,47 @@ public class KendaraanManager {
                     kendaraanItem.getTipeKendaraan(),
                     kendaraanItem.getHargaSewaPerHari(),
                     kendaraanItem.dapatkanAtributKhusus(),
-                    kendaraanItem.getStatusKendaraan());
+                    kendaraanItem.getStatusKendaraan().toString());
         }
         simpanDataKendaraan();
+    }
+
+    // Khusus menampilkan kendaraan dengan status TERSEDIA (Epic 4 - Menu 3 Staff)
+    public void tampilkanKendaraanTersedia() {
+        boolean adaTersedia = false;
+
+        System.out.println("DAFTAR KENDARAAN TERSEDIA");
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.printf("%-15s | %-10s | %-15s | %-20s | %-15s\n", "Plat Nomor", "Jenis", "Harga/Hari", "Info Tambahan", "Status");
+        System.out.println("--------------------------------------------------------------------------------");
+
+        for (Kendaraan kendaraanItem : daftarKendaraan) {
+            kendaraanItem.perbaruiStatusPerawatan();
+            if (kendaraanItem.getStatusKendaraan() == StatusKendaraan.TERSEDIA) {
+                adaTersedia = true;
+                System.out.printf("%-15s | %-10s | %-15.0f | %-20s | %-15s\n",
+                        kendaraanItem.getPlatNomor(),
+                        kendaraanItem.getTipeKendaraan(),
+                        kendaraanItem.getHargaSewaPerHari(),
+                        kendaraanItem.dapatkanAtributKhusus(),
+                        kendaraanItem.getStatusKendaraan().toString());
+            }
+        }
+
+        if (!adaTersedia) {
+            System.out.println("Tidak ada kendaraan dengan status TERSEDIA saat ini.");
+        }
+
+        simpanDataKendaraan();
+    }
+
+    public Kendaraan cariKendaraan(String platNomor) {
+        for (Kendaraan kendaraanItem : daftarKendaraan) {
+            if (kendaraanItem.getPlatNomor().equalsIgnoreCase(platNomor)) {
+                return kendaraanItem;
+            }
+        }
+        return null;
     }
 
     public void hapusKendaraan(String platNomor) {

@@ -1,3 +1,4 @@
+package model;
 public enum StatusKendaraan {
     TERSEDIA,
     SEDANG_DISEWA,

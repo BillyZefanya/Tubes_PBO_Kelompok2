@@ -8,33 +8,49 @@ import model.Mobil;
 import model.Motor;
 import model.Pelanggan;
 import model.Transaksi;
-
+import model.StatusKendaraan;
+import persistence.JsonTransaksi;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 // Service untuk mengelola seluruh proses transaksi
 public class TransaksiService {
 
-    // Menyimpan seluruh transaksi
     private List<Transaksi> daftarTransaksi;
-
-    // Nomor urut transaksi
     private int nomorTransaksi;
+    private JsonTransaksi jsonTransaksi;
 
     public TransaksiService() {
-        daftarTransaksi = new ArrayList<>();
-        nomorTransaksi = 1;
+        jsonTransaksi = new JsonTransaksi();
+        // Muat data transaksi yang sudah ada dari file (persistence)
+        daftarTransaksi = jsonTransaksi.muatDataTransaksi();
+        // Tentukan nomor transaksi selanjutnya berdasarkan data yang sudah ada
+        nomorTransaksi = hitungNomorTransaksiSelanjutnya();
     }
 
-    // Membuat ID transaksi otomatis
+    // Cari nomor urut tertinggi dari ID transaksi yang sudah ada, lalu +1
+    private int hitungNomorTransaksiSelanjutnya() {
+        int nomorTertinggi = 0;
+        for (Transaksi transaksi : daftarTransaksi) {
+            String id = transaksi.getIdTransaksi();
+            try {
+                String bagianNomor = id.substring(id.lastIndexOf("-") + 1);
+                int nomor = Integer.parseInt(bagianNomor);
+                if (nomor > nomorTertinggi) {
+                    nomorTertinggi = nomor;
+                }
+            } catch (Exception e) {
+                // Kalau format ID tidak sesuai, lewati saja
+            }
+        }
+        return nomorTertinggi + 1;
+    }
+
+    // Membuat ID transaksi otomatis, format TRX-001
     public String buatIdTransaksi() {
-
-        String idTransaksi = String.format("TRX%03d", nomorTransaksi);
-
+        String idTransaksi = String.format("TRX-%03d", nomorTransaksi);
         nomorTransaksi++;
-
         return idTransaksi;
     }
 
@@ -45,27 +61,21 @@ public class TransaksiService {
             LocalDate tanggalPeminjaman,
             LocalDate tanggalPengembalianRencana) {
 
-        // Validasi pelanggan
         if (pelanggan == null) {
             System.out.println("Pelanggan tidak ditemukan.");
             return null;
         }
 
-        // Validasi kendaraan
         if (kendaraan == null) {
             System.out.println("Kendaraan tidak ditemukan.");
             return null;
         }
 
-        // Validasi status kendaraan
-        if (!kendaraan.getStatus().equalsIgnoreCase("TERSEDIA")) {
-
+        if (kendaraan.getStatusKendaraan() != StatusKendaraan.TERSEDIA) {
             System.out.println("Kendaraan sedang tidak tersedia.");
-
             return null;
         }
 
-        // Membuat objek transaksi
         Transaksi transaksiBaru = new Transaksi(
                 buatIdTransaksi(),
                 pelanggan,
@@ -74,11 +84,11 @@ public class TransaksiService {
                 tanggalPengembalianRencana,
                 "BERJALAN");
 
-        // Mengubah status kendaraan
-        kendaraan.setStatus("DISEWA");
-
-        // Menambahkan transaksi ke list
+        kendaraan.setStatusKendaraan(StatusKendaraan.SEDANG_DISEWA);
         daftarTransaksi.add(transaksiBaru);
+
+        // Simpan ke file setiap ada transaksi baru
+        jsonTransaksi.simpanDataTransaksi(daftarTransaksi);
 
         System.out.println("Peminjaman berhasil.");
 
@@ -87,22 +97,16 @@ public class TransaksiService {
 
     // Mencari transaksi berdasarkan ID
     public Transaksi cariTransaksi(String idTransaksi) {
-
         for (Transaksi transaksi : daftarTransaksi) {
-
             if (transaksi.getIdTransaksi().equalsIgnoreCase(idTransaksi)) {
-
                 return transaksi;
-
             }
         }
-
         return null;
     }
 
-    // Menghitung biaya sewa
+    // Menghitung biaya sewa berdasarkan rencana durasi
     public double hitungBiayaSewa(Transaksi transaksi) {
-
         long jumlahHariSewa = ChronoUnit.DAYS.between(
                 transaksi.getTanggalPeminjaman(),
                 transaksi.getTanggalPengembalianRencana());
@@ -114,9 +118,8 @@ public class TransaksiService {
         return jumlahHariSewa * transaksi.getKendaraan().getHargaSewaPerHari();
     }
 
-    // Menghitung jumlah hari terlambat
+    // Menghitung jumlah hari terlambat dari selisih tanggal rencana dan aktual
     public int hitungHariTerlambat(Transaksi transaksi) {
-
         long jumlahHariTerlambat = ChronoUnit.DAYS.between(
                 transaksi.getTanggalPengembalianRencana(),
                 transaksi.getTanggalPengembalianAktual());
@@ -128,23 +131,15 @@ public class TransaksiService {
         return (int) jumlahHariTerlambat;
     }
 
-    // Menghitung denda menggunakan polymorphism
-    public double hitungDenda(Transaksi transaksi) {
-
-        int jumlahHariTerlambat = hitungHariTerlambat(transaksi);
-
+    // Menghitung denda menggunakan polymorphism (DendaMobil/DendaMotor)
+    public double hitungDenda(Transaksi transaksi, int jumlahHariTerlambat) {
         Denda denda;
 
         if (transaksi.getKendaraan() instanceof Mobil) {
-
             denda = new DendaMobil();
-
         } else if (transaksi.getKendaraan() instanceof Motor) {
-
             denda = new DendaMotor();
-
         } else {
-
             return 0;
         }
 
@@ -152,59 +147,66 @@ public class TransaksiService {
     }
 
     // Memproses pengembalian kendaraan
-    public void prosesPengembalian(
-            String idTransaksi,
-            LocalDate tanggalPengembalianAktual) {
-
+    // hariTerlambatInput: input manual dari staff (0 jika tepat waktu), sesuai contoh UI di spek
+    public void prosesPengembalian(String idTransaksi, int hariTerlambatInput) {
         Transaksi transaksi = cariTransaksi(idTransaksi);
 
         if (transaksi == null) {
-
             System.out.println("Transaksi tidak ditemukan.");
-
             return;
         }
 
-        transaksi.setTanggalPengembalianAktual(
+        if (transaksi.getStatusTransaksi().equalsIgnoreCase("SELESAI")) {
+            System.out.println("Transaksi ini sudah selesai sebelumnya.");
+            return;
+        }
+
+        LocalDate tanggalPengembalianAktual = LocalDate.now();
+        transaksi.setTanggalPengembalianAktual(tanggalPengembalianAktual);
+
+        double biayaSewa = hitungBiayaSewa(transaksi);
+        double denda = hitungDenda(transaksi, hariTerlambatInput);
+
+        transaksi.setTotalBiayaSewa(biayaSewa);
+        transaksi.setTotalDenda(denda);
+        transaksi.setStatusTransaksi("SELESAI");
+
+        Kendaraan kendaraan = transaksi.getKendaraan();
+
+        // Update total hari disewa untuk keperluan modul maintenance (kelompok 2)
+        long durasiSewaAktual = ChronoUnit.DAYS.between(
+                transaksi.getTanggalPeminjaman(),
                 tanggalPengembalianAktual);
+        if (durasiSewaAktual < 1) {
+            durasiSewaAktual = 1;
+        }
+        kendaraan.setTotalHariDisewa(kendaraan.getTotalHariDisewa() + (int) durasiSewaAktual);
 
-        transaksi.setTotalBiayaSewa(
-                hitungBiayaSewa(transaksi));
+        // Kembalikan status kendaraan, lalu cek apakah perlu masuk maintenance
+        kendaraan.setStatusKendaraan(StatusKendaraan.TERSEDIA);
+        kendaraan.perbaruiStatusPerawatan();
 
-        transaksi.setTotalDenda(
-                hitungDenda(transaksi));
-
-        transaksi.setStatusTransaksi(
-                "SELESAI");
-
-        transaksi.getKendaraan().setStatus(
-                "TERSEDIA");
+        // Simpan perubahan transaksi ke file
+        jsonTransaksi.simpanDataTransaksi(daftarTransaksi);
 
         System.out.println("Pengembalian berhasil.");
     }
 
     // Menampilkan seluruh transaksi
     public void tampilkanSeluruhTransaksi() {
-
         if (daftarTransaksi.isEmpty()) {
-
             System.out.println("Belum ada transaksi.");
-
             return;
         }
 
         for (Transaksi transaksi : daftarTransaksi) {
-
             System.out.println("----------------------------");
-
             System.out.println(transaksi);
-
         }
     }
 
     // Menampilkan struk transaksi
     public void cetakStruk(Transaksi transaksi) {
-
         System.out.println();
         System.out.println("========== STRUK RENTAL ==========");
         System.out.println("ID Transaksi      : " + transaksi.getIdTransaksi());
@@ -216,8 +218,7 @@ public class TransaksiService {
         System.out.println("Biaya Sewa        : Rp " + transaksi.getTotalBiayaSewa());
         System.out.println("Denda             : Rp " + transaksi.getTotalDenda());
         System.out.println("Total Bayar       : Rp "
-                + (transaksi.getTotalBiayaSewa()
-                + transaksi.getTotalDenda()));
+                + (transaksi.getTotalBiayaSewa() + transaksi.getTotalDenda()));
         System.out.println("Status            : " + transaksi.getStatusTransaksi());
         System.out.println("==================================");
     }

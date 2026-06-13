@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Gson dari folder lib (sesuai struktur project)
+    implementation files('lib/gson-2.10.1.jar')
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+application {
+    // Main.java langsung di src/, tanpa package
+    mainClass = 'Main'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+}
+
+tasks.named('run') {
+    standardInput = System.in
+}
+// Pastikan file .json (users.json, kendaraan.json, dll) dibaca dari root project saat menjalankan via gradle
+tasks.named('run') {
+    workingDir = projectDir
+}
