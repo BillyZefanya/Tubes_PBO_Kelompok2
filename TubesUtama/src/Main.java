@@ -2,6 +2,7 @@ import model.Kendaraan;
 import model.Mobil;
 import model.Motor;
 import model.Pelanggan;
+import model.StatusKendaraan;
 import model.Transaksi;
 import model.User;
 import repository.PelangganRepository;
@@ -31,13 +32,11 @@ public class Main {
 
         while (true) {
 
-            // Berhenti total kalau gagal login 3x
             if (userService.isTerkunci()) {
                 System.out.println("Aplikasi dihentikan karena percobaan login melebihi batas.");
                 break;
             }
 
-            // Layar login
             if (loggedInUser == null) {
                 System.out.println("\n--- SILAKAN LOGIN ---");
                 System.out.print("Username: ");
@@ -54,7 +53,6 @@ public class Main {
                 continue;
             }
 
-            // Sudah login, arahkan ke menu sesuai role
             String role = loggedInUser.getRole();
 
             if (role.equalsIgnoreCase("Admin")) {
@@ -76,7 +74,6 @@ public class Main {
     }
 
     // ================= MENU ADMIN =================
-    // Return true jika user pilih logout
     private static boolean menuAdmin(KendaraanManager kendaraanManager) {
         System.out.println("\n========================================");
         System.out.println("DASHBOARD - ADMIN");
@@ -84,6 +81,7 @@ public class Main {
         System.out.println("1. Tambah Kendaraan Baru");
         System.out.println("2. Lihat Semua Kendaraan");
         System.out.println("3. Hapus Kendaraan");
+        System.out.println("4. Selesaikan Perawatan Kendaraan");
         System.out.println("0. Logout");
         System.out.print("Pilihan Anda > ");
         String pilihan = scanner.nextLine();
@@ -98,6 +96,9 @@ public class Main {
                 break;
             case "3":
                 hapusKendaraan(kendaraanManager);
+                break;
+            case "4":
+                selesaikanPerawatanKendaraan(kendaraanManager);
                 break;
             case "0":
                 System.out.println("Anda telah berhasil logout.");
@@ -169,6 +170,40 @@ public class Main {
         }
 
         kendaraanManager.hapusKendaraan(platNomor);
+        tekanEnterUntukLanjut();
+    }
+
+    // Menu tambahan Kelompok 2 (Vehicle Maintenance) - menyelesaikan status DALAM_PERAWATAN
+    private static void selesaikanPerawatanKendaraan(KendaraanManager kendaraanManager) {
+        System.out.println("\n========================================");
+        System.out.println("MENU SELESAIKAN PERAWATAN KENDARAAN");
+        System.out.println("========================================");
+        System.out.print("Masukkan Plat Nomor (ketik 0 untuk kembali) : ");
+        String platNomor = scanner.nextLine();
+
+        if (platNomor.equals("0")) {
+            return;
+        }
+
+        Kendaraan kendaraan = kendaraanManager.cariKendaraan(platNomor);
+
+        if (kendaraan == null) {
+            System.out.println("[GAGAL] Kendaraan dengan plat nomor tersebut tidak ditemukan.");
+            tekanEnterUntukLanjut();
+            return;
+        }
+
+        if (kendaraan.getStatusKendaraan() != StatusKendaraan.DALAM_PERAWATAN) {
+            System.out.println("[GAGAL] Kendaraan " + platNomor + " tidak dalam status DALAM_PERAWATAN. Status saat ini: "
+                    + kendaraan.getStatusKendaraan());
+            tekanEnterUntukLanjut();
+            return;
+        }
+
+        kendaraan.selesaiPerawatan();
+        kendaraanManager.simpanData();
+
+        System.out.println("[SUKSES] Perawatan kendaraan " + platNomor + " telah selesai. Status kembali menjadi TERSEDIA.");
         tekanEnterUntukLanjut();
     }
 
@@ -303,60 +338,67 @@ public class Main {
         Transaksi transaksi = transaksiService.prosesPeminjaman(pelanggan, kendaraan, tanggalPinjam, tanggalRencanaKembali);
 
         if (transaksi != null) {
-            // Simpan status kendaraan (SEDANG_DISEWA) ke file
             kendaraanManager.simpanData();
-            transaksiService.cetakStruk(transaksi);
+            transaksiService.cetakStrukPeminjaman(transaksi, durasi);
         }
 
         tekanEnterUntukLanjut();
     }
 
     private static void prosesPengembalian(KendaraanManager kendaraanManager,
-                                            TransaksiService transaksiService) {
-        System.out.println("\n========================================");
-        System.out.println("MENU PENGEMBALIAN KENDARAAN");
-        System.out.println("========================================");
-        System.out.print("Masukkan ID Transaksi (ketik 0 untuk kembali) : ");
-        String idTransaksi = scanner.nextLine();
+                                        TransaksiService transaksiService) {
+    System.out.println("\n========================================");
+    System.out.println("MENU PENGEMBALIAN KENDARAAN");
+    System.out.println("========================================");
+    System.out.print("Masukkan ID Transaksi (ketik 0 untuk kembali) : ");
+    String idTransaksi = scanner.nextLine();
 
-        if (idTransaksi.equals("0")) {
-            return;
-        }
-
-        Transaksi transaksi = transaksiService.cariTransaksi(idTransaksi);
-
-        if (transaksi == null) {
-            System.out.println("[GAGAL] Transaksi tidak ditemukan.");
-            tekanEnterUntukLanjut();
-            return;
-        }
-
-        if (transaksi.getStatusTransaksi().equalsIgnoreCase("SELESAI")) {
-            System.out.println("[GAGAL] Transaksi ini sudah selesai sebelumnya.");
-            tekanEnterUntukLanjut();
-            return;
-        }
-
-        System.out.println("Kendaraan ditemukan " + transaksi.getKendaraan().getTipeKendaraan()
-                + " (" + transaksi.getKendaraan().getPlatNomor() + ").");
-
-        int hariTerlambat = bacaInt("Durasi Keterlambatan (Hari, isi 0 jika tepat waktu) : ");
-        if (hariTerlambat < 0) {
-            System.out.println("[GAGAL] Hari keterlambatan tidak boleh negatif.");
-            tekanEnterUntukLanjut();
-            return;
-        }
-
-        System.out.println("Menghitung tagihan...");
-
-        transaksiService.prosesPengembalian(idTransaksi, hariTerlambat);
-
-        // Simpan status kendaraan (TERSEDIA / DALAM_PERAWATAN) ke file
-        kendaraanManager.simpanData();
-
-        transaksiService.cetakStruk(transaksi);
-        tekanEnterUntukLanjut();
+    if (idTransaksi.equals("0")) {
+        return;
     }
+
+    Transaksi transaksi = transaksiService.cariTransaksi(idTransaksi);
+
+    if (transaksi == null) {
+        System.out.println("[GAGAL] Transaksi tidak ditemukan.");
+        tekanEnterUntukLanjut();
+        return;
+    }
+
+    if (transaksi.getStatusTransaksi().equalsIgnoreCase("SELESAI")) {
+        System.out.println("[GAGAL] Transaksi ini sudah selesai sebelumnya.");
+        tekanEnterUntukLanjut();
+        return;
+    }
+
+    // Ambil object Kendaraan yang dikelola KendaraanManager (bukan copy dari transaksi.json)
+    Kendaraan kendaraanAktual = kendaraanManager.cariKendaraan(transaksi.getKendaraan().getPlatNomor());
+
+    if (kendaraanAktual == null) {
+        System.out.println("[GAGAL] Data kendaraan terkait tidak ditemukan di sistem.");
+        tekanEnterUntukLanjut();
+        return;
+    }
+
+    System.out.println("Kendaraan ditemukan " + transaksi.getKendaraan().getTipeKendaraan()
+            + " (" + transaksi.getKendaraan().getPlatNomor() + ").");
+
+    int hariTerlambat = bacaInt("Durasi Keterlambatan (Hari, isi 0 jika tepat waktu) : ");
+    if (hariTerlambat < 0) {
+        System.out.println("[GAGAL] Hari keterlambatan tidak boleh negatif.");
+        tekanEnterUntukLanjut();
+        return;
+    }
+
+    System.out.println("Menghitung tagihan...");
+
+    transaksiService.prosesPengembalian(idTransaksi, hariTerlambat, kendaraanAktual);
+
+    kendaraanManager.simpanData();
+
+    transaksiService.cetakStrukPengembalian(transaksi, hariTerlambat);
+    tekanEnterUntukLanjut();
+}
 
     // ================= MENU OWNER =================
     private static boolean menuOwner(LaporanService laporanService, TransaksiService transaksiService) {
@@ -384,7 +426,6 @@ public class Main {
 
     // ================= HELPER INPUT =================
 
-    // Baca input integer, ulangi terus selama input bukan angka (anti-crash)
     private static int bacaInt(String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -397,7 +438,6 @@ public class Main {
         }
     }
 
-    // Baca input double, ulangi terus selama input bukan angka (anti-crash)
     private static double bacaDouble(String prompt) {
         while (true) {
             System.out.print(prompt);

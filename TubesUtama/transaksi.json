@@ -3,22 +3,23 @@
     "idTransaksi": "TRX-001",
     "pelanggan": {
       "nomorKtp": "1234567890123456",
-      "nama": "Billy Z",
-      "noTelepon": "082346861234"
+      "nama": "Billy",
+      "noTelepon": "0823"
     },
     "kendaraan": {
       "jumlahPintu": 4,
-      "platNomor": "1234567890",
-      "hargaSewaPerHari": 80000.0,
+      "platNomor": "1234567890123456",
+      "hargaSewaPerHari": 1500000.0,
       "tipeKendaraan": "Mobil",
-      "statusKendaraan": "SEDANG_DISEWA",
-      "totalHariDisewa": 0,
-      "tanggalServisTerakhir": "2026-06-13"
+      "statusKendaraan": "TERSEDIA",
+      "totalHariDisewa": 1,
+      "tanggalServisTerakhir": "2026-06-14"
     },
-    "tanggalPeminjaman": "2026-06-13",
-    "tanggalPengembalianRencana": "2026-06-14",
-    "statusTransaksi": "BERJALAN",
-    "totalBiayaSewa": 0.0,
-    "totalDenda": 0.0
+    "tanggalPeminjaman": "2026-06-14",
+    "tanggalPengembalianRencana": "2026-06-24",
+    "tanggalPengembalianAktual": "2026-06-14",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 1.5E7,
+    "totalDenda": 500000.0
   }
 ]
