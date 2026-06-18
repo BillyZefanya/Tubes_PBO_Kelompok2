@@ -85,11 +85,9 @@ public class TransaksiService {
 
         kendaraan.setStatusKendaraan(StatusKendaraan.SEDANG_DISEWA);
         daftarTransaksi.add(transaksiBaru);
-
         jsonTransaksi.simpanDataTransaksi(daftarTransaksi);
 
         System.out.println("Peminjaman berhasil.");
-
         return transaksiBaru;
     }
 
@@ -132,56 +130,57 @@ public class TransaksiService {
     }
 
     // Memproses pengembalian kendaraan
-// hariTerlambatInput: input manual dari staff (0 jika tepat waktu)
-// kendaraanAktual: object Kendaraan yang dikelola KendaraanManager (bukan copy dari transaksi.json),
-// supaya status & totalHariDisewa tersimpan konsisten ke kendaraan.json
-public void prosesPengembalian(String idTransaksi, int hariTerlambatInput, Kendaraan kendaraanAktual) {
-    Transaksi transaksi = cariTransaksi(idTransaksi);
+    // hariTerlambatInput: input manual dari staff (0 jika tepat waktu)
+    // kendaraanAktual: object Kendaraan dari KendaraanManager (bukan copy dari transaksi.json)
+    public void prosesPengembalian(String idTransaksi, int hariTerlambatInput, Kendaraan kendaraanAktual) {
+        Transaksi transaksi = cariTransaksi(idTransaksi);
 
-    if (transaksi == null) {
-        System.out.println("Transaksi tidak ditemukan.");
-        return;
+        if (transaksi == null) {
+            System.out.println("Transaksi tidak ditemukan.");
+            return;
+        }
+
+        if (transaksi.getStatusTransaksi().equalsIgnoreCase("SELESAI")) {
+            System.out.println("Transaksi ini sudah selesai sebelumnya.");
+            return;
+        }
+
+        LocalDate tanggalPengembalianAktual = LocalDate.now();
+        transaksi.setTanggalPengembalianAktual(tanggalPengembalianAktual);
+
+        double biayaSewa = hitungBiayaSewa(transaksi);
+        double denda = hitungDenda(transaksi, hariTerlambatInput);
+
+        transaksi.setTotalBiayaSewa(biayaSewa);
+        transaksi.setTotalDenda(denda);
+        transaksi.setStatusTransaksi("SELESAI");
+
+        // Pakai durasi RENCANA (bukan aktual) untuk akumulasi totalHariDisewa
+        // supaya input "180 hari" benar-benar menambah 180 ke totalHariDisewa
+        // contoh: totalHariDisewa=170, sewa 10 hari -> 180 -> DALAM_PERAWATAN
+        long durasiRencana = ChronoUnit.DAYS.between(
+                transaksi.getTanggalPeminjaman(),
+                transaksi.getTanggalPengembalianRencana());
+        if (durasiRencana < 1) {
+            durasiRencana = 1;
+        }
+        kendaraanAktual.setTotalHariDisewa(kendaraanAktual.getTotalHariDisewa() + (int) durasiRencana);
+
+        // Kembalikan status lalu cek apakah perlu masuk maintenance
+        kendaraanAktual.setStatusKendaraan(StatusKendaraan.TERSEDIA);
+        kendaraanAktual.perbaruiStatusPerawatan();
+
+        jsonTransaksi.simpanDataTransaksi(daftarTransaksi);
+
+        System.out.println("Pengembalian berhasil.");
     }
 
-    if (transaksi.getStatusTransaksi().equalsIgnoreCase("SELESAI")) {
-        System.out.println("Transaksi ini sudah selesai sebelumnya.");
-        return;
-    }
-
-    LocalDate tanggalPengembalianAktual = LocalDate.now();
-    transaksi.setTanggalPengembalianAktual(tanggalPengembalianAktual);
-
-    double biayaSewa = hitungBiayaSewa(transaksi);
-    double denda = hitungDenda(transaksi, hariTerlambatInput);
-
-    transaksi.setTotalBiayaSewa(biayaSewa);
-    transaksi.setTotalDenda(denda);
-    transaksi.setStatusTransaksi("SELESAI");
-
-    // Update status & totalHariDisewa pada object Kendaraan yang dikelola KendaraanManager
-    // (bukan pada copy yang tersimpan di dalam Transaksi), agar kendaraan.json tetap konsisten
-    long durasiSewaAktual = ChronoUnit.DAYS.between(
-            transaksi.getTanggalPeminjaman(),
-            tanggalPengembalianAktual);
-    if (durasiSewaAktual < 1) {
-        durasiSewaAktual = 1;
-    }
-    kendaraanAktual.setTotalHariDisewa(kendaraanAktual.getTotalHariDisewa() + (int) durasiSewaAktual);
-
-    kendaraanAktual.setStatusKendaraan(StatusKendaraan.TERSEDIA);
-    kendaraanAktual.perbaruiStatusPerawatan();
-
-    jsonTransaksi.simpanDataTransaksi(daftarTransaksi);
-
-    System.out.println("Pengembalian berhasil.");
-}
-
-    // Format angka ke Rupiah dengan pemisah ribuan titik, contoh: Rp 900.000
+    // Format angka ke Rupiah, contoh: Rp 900.000
     private String formatRupiah(double nilai) {
         return String.format(Locale.forLanguageTag("id-ID"), "Rp %,.0f", nilai);
     }
 
-    // Menampilkan struk sementara setelah peminjaman (Menu 4 Staff)
+    // Struk sementara setelah peminjaman (Menu 4 Staff)
     public void cetakStrukPeminjaman(Transaksi transaksi, int durasiHariSewa) {
         double estimasiBiaya = durasiHariSewa * transaksi.getKendaraan().getHargaSewaPerHari();
 
@@ -196,7 +195,7 @@ public void prosesPengembalian(String idTransaksi, int hariTerlambatInput, Kenda
         System.out.println("----------------------------------");
     }
 
-    // Menampilkan struk tagihan akhir setelah pengembalian (Menu 5 Staff)
+    // Struk tagihan akhir setelah pengembalian (Menu 5 Staff)
     public void cetakStrukPengembalian(Transaksi transaksi, int hariTerlambat) {
         long durasiRencana = ChronoUnit.DAYS.between(
                 transaksi.getTanggalPeminjaman(),
@@ -211,19 +210,23 @@ public void prosesPengembalian(String idTransaksi, int hariTerlambatInput, Kenda
         System.out.println("--- STRUK TAGIHAN AKHIR ---");
         System.out.println("ID Transaksi    : " + transaksi.getIdTransaksi());
         System.out.println("Pelanggan       : " + transaksi.getPelanggan().getNama());
-        System.out.println("Kendaraan       : " + jenisKendaraan + " (" + transaksi.getKendaraan().getPlatNomor() + ")");
-        System.out.println("Biaya Dasar     : " + formatRupiah(transaksi.getTotalBiayaSewa()) + " (" + durasiRencana + " Hari)");
+        System.out.println("Kendaraan       : " + jenisKendaraan
+                + " (" + transaksi.getKendaraan().getPlatNomor() + ")");
+        System.out.println("Biaya Dasar     : " + formatRupiah(transaksi.getTotalBiayaSewa())
+                + " (" + durasiRencana + " Hari)");
 
         if (hariTerlambat > 0) {
             double dendaPerHari = transaksi.getTotalDenda() / hariTerlambat;
             System.out.println("Denda Telat     : " + formatRupiah(transaksi.getTotalDenda())
-                    + " (" + hariTerlambat + " Hari x " + formatRupiah(dendaPerHari) + " khusus " + jenisKendaraan + ")");
+                    + " (" + hariTerlambat + " Hari x " + formatRupiah(dendaPerHari)
+                    + " khusus " + jenisKendaraan + ")");
         } else {
             System.out.println("Denda Telat     : " + formatRupiah(0) + " (Tepat waktu)");
         }
 
         System.out.println("---------------------------------- +");
-        System.out.println("TOTAL BAYAR     : " + formatRupiah(transaksi.getTotalBiayaSewa() + transaksi.getTotalDenda()));
+        System.out.println("TOTAL BAYAR     : " + formatRupiah(
+                transaksi.getTotalBiayaSewa() + transaksi.getTotalDenda()));
         System.out.println("----------------------------------");
     }
 

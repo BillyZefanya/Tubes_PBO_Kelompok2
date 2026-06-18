@@ -5,7 +5,16 @@
     "hargaSewaPerHari": 1500000.0,
     "tipeKendaraan": "Mobil",
     "statusKendaraan": "TERSEDIA",
-    "totalHariDisewa": 1,
+    "totalHariDisewa": 5,
     "tanggalServisTerakhir": "2026-06-14"
+  },
+  {
+    "jenisTransmisi": "Matic",
+    "platNomor": "DEMO001",
+    "hargaSewaPerHari": 100000.0,
+    "tipeKendaraan": "Motor",
+    "statusKendaraan": "TERSEDIA",
+    "totalHariDisewa": 0,
+    "tanggalServisTerakhir": "2026-06-18"
   }
 ]

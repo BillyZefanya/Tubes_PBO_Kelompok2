@@ -7,19 +7,134 @@
       "noTelepon": "0823"
     },
     "kendaraan": {
+      "jenisTransmisi": "Matic",
+      "platNomor": "DEMO001",
+      "hargaSewaPerHari": 100000.0,
+      "tipeKendaraan": "Motor",
+      "statusKendaraan": "TERSEDIA",
+      "totalHariDisewa": 1,
+      "tanggalServisTerakhir": "2026-06-18"
+    },
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-12-15",
+    "tanggalPengembalianAktual": "2026-06-18",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 1.8E7,
+    "totalDenda": 0.0
+  },
+  {
+    "idTransaksi": "TRX-002",
+    "pelanggan": {
+      "nomorKtp": "1234567890123456",
+      "nama": "Billy",
+      "noTelepon": "0823"
+    },
+    "kendaraan": {
+      "jumlahPintu": 4,
+      "platNomor": "1234567890123456",
+      "hargaSewaPerHari": 1500000.0,
+      "tipeKendaraan": "Mobil",
+      "statusKendaraan": "SEDANG_DISEWA",
+      "totalHariDisewa": 3,
+      "tanggalServisTerakhir": "2026-06-14"
+    },
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-12-14",
+    "tanggalPengembalianAktual": "2026-06-18",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 2.685E8,
+    "totalDenda": 0.0
+  },
+  {
+    "idTransaksi": "TRX-003",
+    "pelanggan": {
+      "nomorKtp": "1234567890123456",
+      "nama": "Billy",
+      "noTelepon": "0823"
+    },
+    "kendaraan": {
       "jumlahPintu": 4,
       "platNomor": "1234567890123456",
       "hargaSewaPerHari": 1500000.0,
       "tipeKendaraan": "Mobil",
       "statusKendaraan": "TERSEDIA",
-      "totalHariDisewa": 1,
+      "totalHariDisewa": 5,
       "tanggalServisTerakhir": "2026-06-14"
     },
-    "tanggalPeminjaman": "2026-06-14",
-    "tanggalPengembalianRencana": "2026-06-24",
-    "tanggalPengembalianAktual": "2026-06-14",
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-09-26",
+    "tanggalPengembalianAktual": "2026-06-18",
     "statusTransaksi": "SELESAI",
-    "totalBiayaSewa": 1.5E7,
-    "totalDenda": 500000.0
+    "totalBiayaSewa": 1.5E8,
+    "totalDenda": 0.0
+  },
+  {
+    "idTransaksi": "TRX-004",
+    "pelanggan": {
+      "nomorKtp": "1234567890123456",
+      "nama": "Billy",
+      "noTelepon": "0823"
+    },
+    "kendaraan": {
+      "jenisTransmisi": "Matic",
+      "platNomor": "DEMO001",
+      "hargaSewaPerHari": 100000.0,
+      "tipeKendaraan": "Motor",
+      "statusKendaraan": "DALAM_PERAWATAN",
+      "totalHariDisewa": 185,
+      "tanggalServisTerakhir": "2026-06-18"
+    },
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-12-05",
+    "tanggalPengembalianAktual": "2026-06-18",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 1.7E7,
+    "totalDenda": 0.0
+  },
+  {
+    "idTransaksi": "TRX-005",
+    "pelanggan": {
+      "nomorKtp": "1234567890123456",
+      "nama": "Billy",
+      "noTelepon": "0823"
+    },
+    "kendaraan": {
+      "jenisTransmisi": "Matic",
+      "platNomor": "DEMO001",
+      "hargaSewaPerHari": 100000.0,
+      "tipeKendaraan": "Motor",
+      "statusKendaraan": "DALAM_PERAWATAN",
+      "totalHariDisewa": 185,
+      "tanggalServisTerakhir": "2026-06-18"
+    },
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-06-23",
+    "tanggalPengembalianAktual": "2026-06-18",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 500000.0,
+    "totalDenda": 0.0
+  },
+  {
+    "idTransaksi": "TRX-006",
+    "pelanggan": {
+      "nomorKtp": "1234567890123456",
+      "nama": "Billy",
+      "noTelepon": "0823"
+    },
+    "kendaraan": {
+      "jenisTransmisi": "Matic",
+      "platNomor": "DEMO001",
+      "hargaSewaPerHari": 100000.0,
+      "tipeKendaraan": "Motor",
+      "statusKendaraan": "DALAM_PERAWATAN",
+      "totalHariDisewa": 185,
+      "tanggalServisTerakhir": "2026-06-18"
+    },
+    "tanggalPeminjaman": "2026-06-18",
+    "tanggalPengembalianRencana": "2026-06-28",
+    "tanggalPengembalianAktual": "2026-06-18",
+    "statusTransaksi": "SELESAI",
+    "totalBiayaSewa": 1000000.0,
+    "totalDenda": 0.0
   }
 ]
